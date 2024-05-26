@@ -1,0 +1,148 @@
+// prisma/schema.prisma
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id          Int         @id @default(autoincrement())
+  email       String      @unique
+  password    String
+  name        String?
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  reviews     Review[]
+  watchlist   Watchlist?
+  favoriteGenres Genre[]
+  favoriteActors Actor[]
+  favoriteDirectors Director[]
+  role        UserRole    @default(USER)
+}
+
+model Movie {
+  id           Int          @id @default(autoincrement())
+  title        String
+  description  String?
+  releaseDate  DateTime
+  runtime      Int
+  rating       Float?
+  resolution   String
+  language     String
+  directorId   Int
+  director     Director     @relation(fields: [directorId], references: [id])
+  genres       Genre[]      @relation("MovieGenres", references: [id])
+  actors       Actor[]      @relation("MovieActors", references: [id])
+  reviews      Review[]
+  watchlists   Watchlist[]
+  boxOffice    Float?
+  budget       Float?
+  posterUrl    String?
+  trailerUrl   String?
+  awards       Award[]
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+
+  @@index([title])
+}
+
+model Actor {
+  id          Int       @id @default(autoincrement())
+  name        String
+  birthDate   DateTime?
+  nationality String?
+  biography   String?
+  movies      Movie[]   @relation("MovieActors", references: [id])
+  awards      Award[]
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([name])
+}
+
+model Director {
+  id          Int       @id @default(autoincrement())
+  name        String
+  birthDate   DateTime?
+  nationality String?
+  biography   String?
+  movies      Movie[]
+  awards      Award[]
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([name])
+}
+
+model Genre {
+  id        Int       @id @default(autoincrement())
+  name      String    @unique
+  movies    Movie[]   @relation("MovieGenres", references: [id])
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  @@index([name])
+}
+
+model Review {
+  id        Int       @id @default(autoincrement())
+  rating    Int
+  comment   String?
+  userId    Int
+  movieId   Int
+  user      User      @relation(fields: [userId], references: [id])
+  movie     Movie     @relation(fields: [movieId], references: [id])
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+}
+
+model Watchlist {
+  id        Int       @id @default(autoincrement())
+  userId    Int       @unique
+  user      User      @relation(fields: [userId], references: [id])
+  movies    Movie[]
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+}
+
+model Award {
+  id        Int       @id @default(autoincrement())
+  name      String
+  year      Int
+  category  String
+  movieId   Int?
+  actorId   Int?
+  directorId Int?
+  movie     Movie?    @relation(fields: [movieId], references: [id])
+  actor     Actor?    @relation(fields: [actorId], references: [id])
+  director  Director? @relation(fields: [directorId], references: [id])
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+}
+
+model MovieGenre {
+  movieId Int
+  genreId Int
+  movie   Movie @relation(fields: [movieId], references: [id])
+  genre   Genre @relation(fields: [genreId], references: [id])
+
+  @@id([movieId, genreId])
+}
+
+model MovieActor {
+  movieId Int
+  actorId Int
+  movie   Movie @relation(fields: [movieId], references: [id])
+  actor   Actor @relation(fields: [actorId], references: [id])
+
+  @@id([movieId, actorId])
+}
+
+enum UserRole {
+  ADMIN
+  USER
+}
